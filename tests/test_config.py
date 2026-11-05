@@ -32,7 +32,7 @@ class ConfigTests(unittest.TestCase):
             '[grid]\nrows = 0', '[grid]\ncolumns = true',
             'directions = []', 'directions = ["left"]',
             'directions = ["down", "down"]', 'directions = "down"',
-            'require_all_words = "true"', 'language = "hy"',
+            'require_all_words = "true"', 'language = "fr"',
             'require_all_word = true', '[grid]\nwidth = 20', 'grid = 20',
         ):
             with self.subTest(content=content), self.assertRaises(ValueError):

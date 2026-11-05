@@ -1,5 +1,5 @@
-# English initially. Armenian text and cell normalization will be added later.
-language = "en"
+# Dictionary language: "en" for English or "hy" for Armenian.
+language = "hy"
 
 # Across runs to the right; down runs from top to bottom.
 directions = ["across", "down"]

@@ -122,3 +122,21 @@ test('client requests a public puzzle and dictionary and reports generation fail
     globalThis.fetch = savedFetch;
   }
 });
+
+test('Armenian ՈՒ and ԵՒ each occupy one cell at crossings', async () => {
+  const puzzle = {status: 'success', language: 'hy', grid: {rows: 3, columns: 3}, entries: [
+    {id: '1-across', row: 1, column: 0, direction: 'across', length: 3, clue: 'House'},
+    {id: '2-down', row: 0, column: 1, direction: 'down', length: 3, clue: 'Dog'},
+  ]};
+  const result = await solvePuzzle(puzzle, dictionaryCandidates({'տուն': 'House', 'շուն': 'Dog'}));
+  assert.equal(result.status, 'solved');
+  assert.deepEqual(result.answers, {'1-across': 'ՏՈՒՆ', '2-down': 'ՇՈՒՆ'});
+  puzzle.grid.rows = 4;
+  puzzle.entries[0].row = 3;
+  puzzle.entries[0].clue = 'Sun';
+  puzzle.entries[1].length = 4;
+  puzzle.entries[1].column = 2;
+  const sun = await solvePuzzle(puzzle, dictionaryCandidates({'արև': 'Sun', 'տերև': 'Dog'}));
+  assert.equal(sun.status, 'solved');
+  assert.equal(sun.answers['1-across'], 'ԱՐԵՒ');
+});

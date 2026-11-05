@@ -8,18 +8,24 @@ import secrets
 import time
 
 from .config import load_config
-from .grid import Grid, normalize_word
+from .grid import Grid, normalize_word, word_cells
 
-DICTIONARY_PATH = Path(__file__).resolve().parents[1] / 'data' / 'english.json'
+DATA_DIRECTORY = Path(__file__).resolve().parents[1] / 'data'
+DICTIONARY_PATH = DATA_DIRECTORY / 'english.json'
+DICTIONARY_FILES = {'en': 'english.json', 'hy': 'armenian.json'}
 
 
-def load_dictionary(path=DICTIONARY_PATH):
+def load_dictionary(path=None, *, language='en'):
+    if language not in DICTIONARY_FILES:
+        raise ValueError("Language must be 'en' or 'hy'")
+    if path is None:
+        path = DATA_DIRECTORY / DICTIONARY_FILES[language]
     data = json.loads(Path(path).read_text(encoding='utf-8'))
     if not isinstance(data, dict) or not data:
         raise ValueError('Dictionary must be a nonempty word-to-definition object')
     result = {}
     for word, definition in data.items():
-        normalized = normalize_word(word)
+        normalized = normalize_word(word, language)
         if normalized in result or not isinstance(definition, str) or not definition.strip():
             raise ValueError('Dictionary words must be unique and have nonempty definitions')
         result[normalized] = definition
@@ -49,12 +55,12 @@ def generate(config, dictionary, count=15, seed=None, *, max_nodes=100000, timeo
             options = [(r, c, d) for d in config.directions
                        for r in range(config.grid.rows)
                        for c in range(config.grid.columns)
-                       if (c + len(word) <= config.grid.columns if d == 'across'
-                           else r + len(word) <= config.grid.rows)]
+                       if (c + len(word_cells(word)) <= config.grid.columns if d == 'across'
+                           else r + len(word_cells(word)) <= config.grid.rows)]
         else:
             options = set()
             for (r, c), cell in grid.cells.items():
-                for i, letter in enumerate(word):
+                for i, letter in enumerate(word_cells(word)):
                     if cell.letter != letter:
                         continue
                     for d in config.directions:
@@ -64,8 +70,8 @@ def generate(config, dictionary, count=15, seed=None, *, max_nodes=100000, timeo
             options = sorted(options)
         rng.shuffle(options)
         if not grid.words:
-            options.sort(key=lambda p: abs(p[0] + (len(word)/2 if p[2] == 'down' else 0) - config.grid.rows/2)
-                         + abs(p[1] + (len(word)/2 if p[2] == 'across' else 0) - config.grid.columns/2))
+            options.sort(key=lambda p: abs(p[0] + (len(word_cells(word))/2 if p[2] == 'down' else 0) - config.grid.rows/2)
+                         + abs(p[1] + (len(word_cells(word))/2 if p[2] == 'across' else 0) - config.grid.columns/2))
         return options
 
     def search(remaining):
@@ -79,7 +85,7 @@ def generate(config, dictionary, count=15, seed=None, *, max_nodes=100000, timeo
         rng.shuffle(order)
         # Prefer longer words initially; try other words too so bridges can be placed first.
         if not grid.words:
-            order.sort(key=len, reverse=True)
+            order.sort(key=lambda w: len(word_cells(w)), reverse=True)
         seen = set()
         for word in order:
             if word in seen:
@@ -106,7 +112,7 @@ def generate(config, dictionary, count=15, seed=None, *, max_nodes=100000, timeo
         return False
 
     # A word longer than both allowed dimensions is immediately impossible.
-    impossible = [w for w in selected if not any(len(w) <= (config.grid.columns if d == 'across' else config.grid.rows) for d in config.directions)]
+    impossible = [w for w in selected if not any(len(word_cells(w)) <= (config.grid.columns if d == 'across' else config.grid.rows) for d in config.directions)]
     success = not impossible and search(selected)
     if success:
         grid.validate_complete(selected)
@@ -127,12 +133,13 @@ def generate(config, dictionary, count=15, seed=None, *, max_nodes=100000, timeo
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default='config.toml')
-    parser.add_argument('--dictionary', default=str(DICTIONARY_PATH))
+    parser.add_argument('--dictionary', help='Override the dictionary selected by config language')
     parser.add_argument('--count', type=int, default=15)
     parser.add_argument('--seed', type=int)
     args = parser.parse_args()
-    result = generate(load_config(args.config), load_dictionary(args.dictionary), args.count, args.seed)
-    print(json.dumps(result, indent=2))
+    config = load_config(args.config)
+    result = generate(config, load_dictionary(args.dictionary, language=config.language), args.count, args.seed)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0 if result['status'] == 'success' else 1
 
 

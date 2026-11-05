@@ -29,8 +29,8 @@ class CrosswordConfig:
     allow_duplicate_words: bool = False
 
     def __post_init__(self) -> None:
-        if self.language != "en":
-            raise ValueError("Only language 'en' is supported currently; Armenian is planned")
+        if self.language not in ("en", "hy"):
+            raise ValueError("Language must be 'en' or 'hy'")
         if not isinstance(self.grid, GridConfig):
             raise ValueError("grid must be a GridConfig")
         if (

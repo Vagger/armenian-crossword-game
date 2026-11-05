@@ -1,3 +1,5 @@
+export const wordCells = word => word.toUpperCase().match(/ՈՒ|ԵՒ|./gu) || [];
+
 // Candidate generation is separate from crossing constraints so it can be replaced.
 export function dictionaryCandidates(dictionary) {
   const index = new Map();
@@ -43,7 +45,7 @@ function prepare(puzzle, candidates) {
     if (!Array.isArray(supplied)) throw new Error('Candidate provider must return an array');
     const domain = [...new Set(supplied.filter(word => typeof word === 'string')
       .map(word => word.toUpperCase())
-      .filter(word => /^[A-Z]+$/.test(word) && word.length === entry.length))];
+      .filter(word => (puzzle.language === 'hy' ? /^[Ա-Ֆ]+$/ : /^[A-Z]+$/).test(word) && wordCells(word).length === entry.length))];
     return {id: entry.id, cells, domain};
   });
 }
@@ -70,14 +72,14 @@ export function* solveSteps(puzzle, candidates, {
     const letters = new Map();
     for (const entry of entries) {
       const word = answers.get(entry.id);
-      if (word) entry.cells.forEach((cell, i) => letters.set(cell, word[i]));
+      if (word) entry.cells.forEach((cell, i) => letters.set(cell, wordCells(word)[i]));
     }
     let chosen, options;
     for (const entry of entries) {
       if (answers.has(entry.id)) continue;
       const remaining = entry.domain.filter(word =>
         (allowDuplicateWords || ![...answers.values()].includes(word)) &&
-        entry.cells.every((cell, i) => !letters.has(cell) || letters.get(cell) === word[i]));
+        entry.cells.every((cell, i) => !letters.has(cell) || letters.get(cell) === wordCells(word)[i]));
       yield {type: 'candidates', entryId: entry.id, candidates: [...remaining]};
       if (!remaining.length) return 'unsolved';
       if (!chosen || remaining.length < options.length) {

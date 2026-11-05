@@ -3,7 +3,7 @@ from collections import OrderedDict
 from copy import deepcopy
 import secrets
 from threading import Lock
-from .grid import normalize_word
+from .grid import normalize_word, word_cells
 
 
 class PuzzleStore:
@@ -28,7 +28,7 @@ class PuzzleStore:
             entries.append({
                 'id': entry_id, 'number': clue['number'],
                 'row': word['row'], 'column': word['column'],
-                'direction': word['direction'], 'length': len(word['word']),
+                'direction': word['direction'], 'length': len(word_cells(word['word'])),
                 'clue': clue['definition'],
             })
             answers[entry_id] = word['word']
@@ -68,8 +68,8 @@ class PuzzleStore:
         for entry_id, answer in answers.items():
             if answer == '':
                 continue
-            normalized[entry_id] = normalize_word(answer)
-            if len(normalized[entry_id]) != len(expected[entry_id]):
+            normalized[entry_id] = normalize_word(answer, stored['puzzle']['language'])
+            if len(word_cells(normalized[entry_id])) != len(word_cells(expected[entry_id])):
                 raise ValueError(f'Answer length does not match entry {entry_id}')
         entries = {entry_id: 'unanswered' if entry_id not in normalized else
                    'correct' if normalized[entry_id] == answer else 'incorrect'

@@ -24,8 +24,15 @@ caller's working directory unless an absolute path is supplied.
 
 The grid model enforces matching letters at crossings, prohibits
 overlap in the same direction, and treats English answers as case-insensitive
-letters displayed in uppercase. Armenian support is planned and will need explicit text and
-cell normalization; currently the loader accepts only `language = "en"`.
+letters displayed in uppercase. Set `language = "hy"` in `config.toml` to use `data/armenian.json` instead.
+Armenian answers are case-insensitive and displayed in uppercase. `ու` (ՈՒ)
+and `և` (normalized to ԵՒ) each occupy one cell, including at crossings.
+Spaces, punctuation, and letters from other scripts are rejected.
+
+From Python, use `load_dictionary(language="hy")` or
+`load_dictionary("path/to/custom.json", language="hy")`. The CLI and server
+select the dictionary from the configured language; `--dictionary` overrides
+the CLI file path while retaining language validation.
 
 ## Automatic generation
 
@@ -136,7 +143,7 @@ with the same 100,000-attempt limit.
 ### Server answer checking
 
 `POST /api/check` accepts `{"puzzle_id":"…","answers":{"1-across":"CAT"}}`.
-Answers use entry IDs and are case-insensitive English letters. Missing entries
+Answers use entry IDs and case-insensitive letters in the stored puzzle’s language. Missing entries
 and empty strings count as unanswered. Unknown entry IDs, invalid characters,
 and wrong answer lengths return HTTP 400; expired or unknown puzzles return
 HTTP 404. The response contains `puzzle_id`, `complete`, `correct`, `total`,
@@ -164,7 +171,7 @@ From the project directory, run:
 /opt/homebrew/bin/python3.12 -m crossword.server
 ```
 
-Open http://127.0.0.1:8000. Click a starting cell, enter an English word,
+Open http://127.0.0.1:8000. Click a starting cell, enter a word in the configured language,
 and choose across or down. Undo removes the last word; clear resets the grid.
 Use the required-word list and Check completion to verify all supplied words
 are placed. Drafts are kept in browser memory and cleared on refresh.

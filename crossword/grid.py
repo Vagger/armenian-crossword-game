@@ -1,13 +1,30 @@
 """Grid placement model with zero-based coordinates and atomic validation."""
+import re
 from collections import Counter
 from dataclasses import dataclass
 from .config import CrosswordConfig
 
 
-def normalize_word(word):
-    if not isinstance(word, str) or not word or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' for c in word):
-        raise ValueError('Use English letters A–Z only, without spaces or punctuation')
+def normalize_word(word, language='en'):
+    """Normalize case; lowercase և is canonically stored as ԵՒ."""
+    if language not in ('en', 'hy'):
+        raise ValueError("Language must be 'en' or 'hy'")
+    if not isinstance(word, str) or not word:
+        raise ValueError('Word must be a nonempty string')
+    if language == 'en':
+        valid = all(c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' for c in word)
+        message = 'Use English letters A–Z only, without spaces or punctuation'
+    else:
+        valid = all('Ա' <= c <= 'Ֆ' or 'ա' <= c <= 'ֆ' or c == 'և' for c in word)
+        message = 'Use Armenian letters only, without spaces or punctuation'
+    if not valid:
+        raise ValueError(message)
     return word.upper()
+
+
+def word_cells(word):
+    """Split a normalized answer into cells, keeping ՈՒ and ԵՒ together."""
+    return re.findall('ՈՒ|ԵՒ|.', word)
 
 
 @dataclass(frozen=True)
@@ -19,7 +36,7 @@ class PlacedWord:
 
     def positions(self):
         return [(self.row + (i if self.direction == 'down' else 0),
-                 self.column + (i if self.direction == 'across' else 0)) for i in range(len(self.word))]
+                 self.column + (i if self.direction == 'across' else 0)) for i in range(len(word_cells(self.word)))]
 
 
 @dataclass(frozen=True)
@@ -35,7 +52,7 @@ class Grid:
         self.words = []
 
     def place(self, word, row, column, direction):
-        word = normalize_word(word)
+        word = normalize_word(word, self.config.language)
         if type(row) is not int or type(column) is not int:
             raise ValueError('Row and column must be integers')
         if direction not in self.config.directions:
@@ -45,7 +62,7 @@ class Grid:
         placed = PlacedWord(word, row, column, direction)
         positions = placed.positions()
         crossings = set()
-        for (r, c), letter in zip(positions, word):
+        for (r, c), letter in zip(positions, word_cells(word)):
             if not (0 <= r < self.config.grid.rows and 0 <= c < self.config.grid.columns):
                 raise ValueError('Word extends beyond the grid boundary')
             cell = self.cells.get((r, c))
@@ -70,14 +87,14 @@ class Grid:
                         raise ValueError('Diagonal touching is disabled')
         if self.words and self.config.require_connected and not crossings:
             raise ValueError('Word must cross an existing word')
-        for position, letter in zip(positions, word):
+        for position, letter in zip(positions, word_cells(word)):
             old = self.cells.get(position)
             self.cells[position] = Cell(letter, (old.directions if old else frozenset()) | frozenset([direction]))
         self.words.append(placed)
         return placed
 
     def validate_complete(self, supplied_words):
-        required = Counter(normalize_word(w) for w in supplied_words)
+        required = Counter(normalize_word(w, self.config.language) for w in supplied_words)
         if not self.config.allow_duplicate_words and any(n > 1 for n in required.values()):
             raise ValueError('Supplied list contains duplicate words')
         missing = required - Counter(w.word for w in self.words)

@@ -25,7 +25,7 @@ def make_handler(config_path):
         def do_GET(self):
             if self.path == '/api/dictionary':
                 try:
-                    self.reply(load_dictionary())
+                    self.reply(load_dictionary(language=load_config(config_path).language))
                 except (ValueError, OSError) as error:
                     self.reply({'error': str(error)}, 400)
             elif self.path == '/api/config':
@@ -61,7 +61,7 @@ def make_handler(config_path):
                     return
                 if self.path in ('/api/generate', '/api/puzzle'):
                     config = load_config(config_path)
-                    result = generate(config, load_dictionary(),
+                    result = generate(config, load_dictionary(language=config.language),
                                       data.get('count', 15), data.get('seed'))
                     self.reply(puzzles.create(config, result)
                                if self.path == '/api/puzzle' else result)

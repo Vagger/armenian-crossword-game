@@ -1,5 +1,5 @@
 import {requestPuzzle, requestDictionary, checkAnswers} from './puzzle-client.mjs';
-import {dictionaryCandidates, solveSteps} from './solver.mjs';
+import {dictionaryCandidates, solveSteps, wordCells} from './solver.mjs';
 
 const $ = id => document.getElementById(id);
 let puzzle, provider, iterator, answers = {}, domains = {}, activeId;
@@ -27,7 +27,7 @@ function render() {
     starts.set(`${entry.row},${entry.column}`, entry.number);
     positions(entry).forEach((key, i) => {
       const cell = cells.get(key) || '';
-      cells.set(key, answers[entry.id]?.[i] || cell);
+      cells.set(key, (answers[entry.id] ? wordCells(answers[entry.id])[i] : null) || cell);
       if (entry.id === activeId) selected.add(key);
     });
   }
@@ -159,7 +159,7 @@ $('generate-form').onsubmit = async event => {
     if (next.status !== 'success') { status(next.message, true); return; }
     const dictionary = await requestDictionary();
     puzzle = next; provider = dictionaryCandidates(dictionary);
-    $('dimensions').textContent = `${puzzle.grid.rows} × ${puzzle.grid.columns} · ${puzzle.entries.length} entries · English`;
+    $('dimensions').textContent = `${puzzle.grid.rows} × ${puzzle.grid.columns} · ${puzzle.entries.length} entries · ${puzzle.language==='hy'?'Armenian':'English'}`;
     reset();
   } catch (error) { status(error.message, true); }
   finally { loading = false; controls(); }
