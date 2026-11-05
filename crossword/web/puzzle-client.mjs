@@ -7,15 +7,15 @@ async function requestJSON(url, options) {
   return result;
 }
 
-export function requestPuzzle({count = 15, seed = null, signal} = {}) {
+export function requestPuzzle({count = 15, seed = null, language, signal} = {}) {
   return requestJSON('/api/puzzle', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({count, seed}), signal,
+    body: JSON.stringify({count, seed, language}), signal,
   });
 }
 
-export function requestDictionary({signal} = {}) {
-  return requestJSON('/api/dictionary', {signal});
+export function requestDictionary({signal, language} = {}) {
+  return requestJSON('/api/dictionary' + (language ? '?language=' + encodeURIComponent(language) : ''), {signal});
 }
 
 export function checkAnswers(puzzleId, answers, {signal} = {}) {
@@ -25,10 +25,10 @@ export function checkAnswers(puzzleId, answers, {signal} = {}) {
   });
 }
 
-export async function generateAndSolve({count = 15, seed = null, signal, ...options} = {}) {
-  const puzzle = await requestPuzzle({count, seed, signal});
+export async function generateAndSolve({count = 15, seed = null, language, signal, ...options} = {}) {
+  const puzzle = await requestPuzzle({count, seed, language, signal});
   if (puzzle.status !== 'success') return {puzzle, result: null};
-  const dictionary = await requestDictionary({signal});
+  const dictionary = await requestDictionary({signal, language: puzzle.language});
   const result = await solvePuzzle(puzzle, dictionaryCandidates(dictionary), {...options, signal});
   return {puzzle, result};
 }

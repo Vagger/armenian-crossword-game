@@ -1,9 +1,10 @@
 """Run the local editor with python3.12 -m crossword.server."""
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+from urllib.parse import urlsplit, parse_qs
 from .config import load_config
 from .grid import Grid
 from .generator import generate, load_dictionary
@@ -22,15 +23,21 @@ def make_handler(config_path):
             self.end_headers()
             self.wfile.write(body)
 
+        def request_config(self, language=None):
+            config = load_config(config_path)
+            return replace(config, language=language) if language is not None else config
+
         def do_GET(self):
-            if self.path == '/api/dictionary':
+            url = urlsplit(self.path)
+            language = parse_qs(url.query, keep_blank_values=True).get('language', [None])[0]
+            if url.path == '/api/dictionary':
                 try:
-                    self.reply(load_dictionary(language=load_config(config_path).language))
+                    self.reply(load_dictionary(language=self.request_config(language).language))
                 except (ValueError, OSError) as error:
                     self.reply({'error': str(error)}, 400)
-            elif self.path == '/api/config':
+            elif url.path == '/api/config':
                 try:
-                    self.reply(asdict(load_config(config_path)))
+                    self.reply(asdict(self.request_config(language)))
                 except (ValueError, OSError) as error:
                     self.reply({'error': str(error)}, 400)
             elif self.path in ('/', '/solve', '/solver.mjs', '/puzzle-client.mjs', '/solver-ui.mjs'):
@@ -60,13 +67,13 @@ def make_handler(config_path):
                     self.reply(puzzles.check(data['puzzle_id'], data['answers']))
                     return
                 if self.path in ('/api/generate', '/api/puzzle'):
-                    config = load_config(config_path)
+                    config = self.request_config(data.get('language'))
                     result = generate(config, load_dictionary(language=config.language),
                                       data.get('count', 15), data.get('seed'))
                     self.reply(puzzles.create(config, result)
                                if self.path == '/api/puzzle' else result)
                     return
-                grid = Grid(load_config(config_path))
+                grid = Grid(self.request_config(data.get('language')))
                 for word in data['words']:
                     grid.place(**word)
                 if data.get('finalize'):

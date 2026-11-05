@@ -10,6 +10,7 @@ function status(message, error = false) {
   $('status').className = error ? 'error' : '';
 }
 function controls() {
+  $('language').disabled = loading || running || checking;
   $('generate').disabled = loading || running || checking;
   $('solve').disabled = loading || running || checking || !puzzle || finished;
   $('step').disabled = loading || running || checking || !puzzle || finished;
@@ -155,12 +156,36 @@ $('generate-form').onsubmit = async event => {
   if (loading || running || checking) return;
   pause(); loading = true; controls(); status('Generating a complete puzzle…');
   try {
-    const next = await requestPuzzle({count: Number($('word-count').value), seed: $('seed').value === '' ? null : Number($('seed').value)});
+    const next = await requestPuzzle({language: $('language').value, count: Number($('word-count').value), seed: $('seed').value === '' ? null : Number($('seed').value)});
     if (next.status !== 'success') { status(next.message, true); return; }
-    const dictionary = await requestDictionary();
+    const dictionary = await requestDictionary({language: next.language});
     puzzle = next; provider = dictionaryCandidates(dictionary);
     $('dimensions').textContent = `${puzzle.grid.rows} × ${puzzle.grid.columns} · ${puzzle.entries.length} entries · ${puzzle.language==='hy'?'Armenian':'English'}`;
     reset();
   } catch (error) { status(error.message, true); }
   finally { loading = false; controls(); }
 };
+
+async function initLanguage() {
+  loading = true; controls();
+  try {
+    let saved;
+    try { saved = localStorage.getItem('crossword-language'); } catch {}
+    const response = await fetch('/api/config' + (saved ? '?language=' + encodeURIComponent(saved) : ''));
+    const config = await response.json();
+    if (!response.ok) throw new Error(config.error);
+    $('language').value = config.language;
+  } catch (error) { status(error.message, true); }
+  finally { loading = false; controls(); }
+}
+$('language').onchange = () => {
+  pause(); iterator?.return(); iterator = null;
+  puzzle = null; provider = null; answers = {}; domains = {}; activeId = null;
+  verification = null; finished = false; attempts = 0;
+  for (const id of ['grid', 'clues', 'log']) $(id).replaceChildren();
+  $('progress').textContent = '';
+  $('dimensions').textContent = 'No puzzle loaded.';
+  try { localStorage.setItem('crossword-language', $('language').value); } catch {}
+  status('Language changed. Generate a puzzle to begin.'); controls();
+};
+void initLanguage();
