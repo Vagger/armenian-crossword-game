@@ -1,0 +1,14 @@
+# English initially. Armenian text and cell normalization will be added later.
+language = "en"
+
+# Across runs to the right; down runs from top to bottom.
+directions = ["across", "down"]
+require_all_words = true
+require_connected = true
+allow_side_touching = false
+allow_diagonal_touching = true
+allow_duplicate_words = false
+
+[grid]
+rows = 20
+columns = 20
