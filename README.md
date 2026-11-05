@@ -37,9 +37,11 @@ the CLI file path while retaining language validation.
 ## Automatic generation
 
 Use **Generate crossword** in the editor to select 15 random words by default
-from `data/english.json`. Change the count to request up to all 100 words.
+from the selected language’s dictionary. Both `data/english.json` and
+`data/armenian.json` contain 500 words with clues in their respective languages.
+Change the count to request up to 500 words.
 Every selected word must fit; the dictionary is a pool, not a requirement to
-place all 100 by default. Numbered clues use the dictionary definitions.
+place all 500 by default. Numbered clues use the dictionary definitions.
 The answer key can be expanded below the grid.
 
 The generator uses randomized backtracking and the shared grid model. An
@@ -49,7 +51,7 @@ or five seconds. A time or attempt limit is reported separately from proven
 impossibility, with no partial result replacing the current puzzle. A seed
 can time out on slower machines even when it succeeds elsewhere.
 This initial generator always seeks a complete selection, including when
-`require_all_words` is false. Dense 100-word requests may hit the search limit.
+`require_all_words` is false. Large requests may exceed the grid capacity or hit the search limit.
 
 You can also generate JSON from the command line:
 

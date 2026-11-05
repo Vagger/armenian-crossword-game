@@ -32,7 +32,7 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(generate(tiny, {'CAT': 'A pet'}, 1, 0)['status'], 'impossible')
         disconnected = replace(CrosswordConfig(), grid=GridConfig(3, 3))
         self.assertEqual(generate(disconnected, {'AA': 'A', 'BB': 'B'}, 2, 0)['status'], 'impossible')
-        for count in (0, 101, True, 1.5):
+        for count in (0, len(load_dictionary()) + 1, True, 1.5):
             with self.assertRaises(ValueError):
                 generate(CrosswordConfig(), load_dictionary(), count)
         with self.assertRaises(ValueError):

@@ -39,7 +39,7 @@ class ArmenianTests(unittest.TestCase):
             path.write_text('language = "hy"', encoding='utf-8')
             config = load_config(path)
             dictionary = load_dictionary(language=config.language)
-            self.assertEqual(len(dictionary), 100)
+            self.assertEqual(len(dictionary), 500)
             custom = Path(directory) / 'words.json'
             custom.write_text(json.dumps({'արև': 'Լույս տվող աստղ։', 'ԱՐԵՒ': 'Կրկնություն։'}))
             with self.assertRaises(ValueError):

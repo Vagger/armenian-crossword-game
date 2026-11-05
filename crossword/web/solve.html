@@ -7,7 +7,7 @@
 .header-actions{display:flex;align-items:center;justify-content:flex-end;gap:20px;flex-wrap:wrap}.language-picker{margin:0;font-size:12px;color:#65796f}.language-picker select{display:block;width:auto;max-width:100%;margin-top:5px;padding:9px 12px;border:1px solid #bac9be;border-radius:6px;background:#fffef9;color:#253c35;font:15px system-ui}header{gap:20px;flex-wrap:wrap}</style>
 <header><h1>Crossword solver</h1><div class="header-actions"><a href="/">Construction editor →</a><label class="language-picker" for="language">Puzzle language<select id="language"><option value="en">English</option><option value="hy">Հայերեն (Armenian)</option></select></label></div></header>
 <main><aside><h2>New puzzle</h2><p class="muted">Watch dictionary candidates and crossing letters build a solution.</p>
-<form id="generate-form"><label for="word-count">Number of words</label><input id="word-count" type="number" min="1" max="100" value="15" required>
+<form id="generate-form"><label for="word-count">Number of words</label><input id="word-count" type="number" min="1" max="500" value="15" required>
 <label for="seed">Seed (optional)</label><input id="seed" type="number" min="0" max="4294967295" placeholder="Random">
 <div class="controls"><button id="generate" class="primary">Generate puzzle</button></div></form>
 <div class="controls"><button id="solve" disabled>Solve</button><button id="step" disabled>Step</button><button id="pause" disabled>Pause</button><button id="reset" disabled>Reset</button><button id="check" disabled>Check answers</button></div>
